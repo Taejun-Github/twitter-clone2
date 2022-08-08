@@ -5,7 +5,8 @@
     <input v-model="email" type="text" placeholder="이메일" class="border border-gray-200 m-2 w-1/3 h-8 rounded-sm focus:ring-2 focus:outline-none focus:border-blue-300"/>
     <input v-model="username" type="text" placeholder="아이디" class="border border-gray-200 m-2 w-1/3 h-8 rounded-sm focus:ring-2 focus:outline-none focus:border-blue-300"/>
     <input v-model="password" type="password" placeholder="비밀번호" class="border border-gray-200 m-2 w-1/3 h-8 rounded-sm focus:ring-2 focus:outline-none focus:border-blue-300"/>
-    <button class="bg-blue-600 rounded-3xl text-center w-1/3 h-10 text-white m-2 " @click="onRegister">회원가입</button>
+    <button v-if="loading" class="bg-blue-200 rounded-3xl text-center w-1/3 h-10 text-white m-2 " @click="onRegister">회원가입 중</button>
+    <button v-else class="bg-blue-500 rounded-3xl text-center w-1/3 h-10 text-white m-2 " @click="onRegister">회원가입</button>
     <router-link to="/login">
     <button class="text-blue-600 text-sm py-2">계정이 이미 있으신가요? 로그인 하기</button>
     </router-link>
@@ -14,20 +15,39 @@
 
 <script>
 import {ref} from 'vue'
-import {auth} from '../firebase'
+import {auth, db, USER_COLLECTION} from '../firebase'
+import {useRouter} from 'vue-router'
+
 export default {
   setup() {
     const username = ref('')
     const email = ref('')
     const password = ref('')
-    const loading = ref(true);
+    const loading = ref(false);
+    const router = useRouter()
 
     const onRegister = async () => {
       try {
+        loading.value = true
         const credential = await auth.createUserWithEmailAndPassword(email.value, password.value)
-        console.log(credential);
+        const user = credential.user;
+        const doc = USER_COLLECTION.doc(user.uid);
+        await doc.set({
+          uid: user.uid,
+          email: email.value,
+          profile_image_url: '/profile.jpeg',
+          num_tweets: 0,
+          followers: [],
+          followings: [],
+          created_at: Date.now()
+        })
+        alert("회원 가입에 성공했습니다. 로그인해 주세요")
+        router.push('/login')
+
       } catch(e) {
         console.log("create user with email and password error", e);
+      } finally {
+        loading.value = false;
       }
     }
 
