@@ -41,6 +41,7 @@ export default {
         await doc.set({
           uid: user.uid,
           email: email.value,
+          username: username.value,
           profile_image_url: '/profile.jpeg',
           num_tweets: 0,
           followers: [],
