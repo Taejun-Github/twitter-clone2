@@ -13,9 +13,11 @@
 </template>
 
 <script>
-import {ref} from 'vue'
-import {auth} from '../firebase'
+import {ref, onMounted} from 'vue'
+import {auth, USER_COLLECTION} from '../firebase'
 import { useRouter } from 'vue-router'
+import store from '../store'
+
 export default {
   setup() {
     const email = ref('')
@@ -24,10 +26,20 @@ export default {
     const router = useRouter()
 
     const onlogin = async () => {
+
+      if(!email.value || !password.value) {
+        alert("이메일, 비밀번호를 모두 입력해주세요");
+        return
+      }
       try {
         loading.value = true;
         const {user} = await auth.signInWithEmailAndPassword(email.value, password.value)
-        console.log(user.uid)
+        
+        // get user info (firebase에서 가져온다)
+        const doc = await USER_COLLECTION.doc(user.uid).get()
+        store.commit("SET_USER", doc.data())
+
+
         router.replace("/")
       } catch(e) {
           switch(e.message) {
