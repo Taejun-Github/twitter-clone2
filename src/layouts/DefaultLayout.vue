@@ -23,7 +23,7 @@
                 </div>
                 <!-- tweet button -->
                 <div class="w-12 xl:w-full md:w-40 pr-1 xl:pr-3 md:pr-3 flex justify-center">
-                    <button class="mt-3 bg-primary text-white w-full h-12 rounded-full hover:bg-dark">
+                    <button class="mt-3 bg-primary text-white w-full h-12 rounded-full hover:bg-dark" @click="showModal">
                         <span class="hidden xl:block md:block">Tweet</span>
                         <i class="fas fa-plus xl:hidden md:hidden"></i>
                     </button>
@@ -68,6 +68,8 @@
                 로그아웃
             </button>
         </div>
+
+        <tweet-modal v-if="showTweetModal" @closeModal="closeModal"></tweet-modal>
     </div>
 </template>
 
@@ -76,26 +78,34 @@ import { ref, onBeforeMount, computed } from 'vue'
 import {auth} from '../firebase'
 import router from '../router';
 import store from '../store'
+import TweetModal from '../components/TweetModal.vue'
 export default {
     setup() {
-        const routes = ref([])
-        const showProfileDropdown = ref(false)
+        const routes = ref([]);
+        const showProfileDropdown = ref(false);
+        const showTweetModal = ref(false)
 
-        const currentUser = computed(() => store.state.user)
+        const currentUser = computed(() => store.state.user);
 
-        const onLogout = async () => {
-            await auth.signOut()
-            store.commit("SET_USER", null)
-            await router.replace("/login")
+        const showModal = () => {
+            showTweetModal.value = true
+        }
+        const closeModal = () => {
+            showTweetModal.value = false
         }
 
+        const onLogout = async () => {
+            await auth.signOut();
+            store.commit("SET_USER", null);
+            await router.replace("/login");
+        };
         onBeforeMount(() => {
-            routes.value = router.options.routes.filter(route => route.meta.isMenu == true)
-
+            routes.value = router.options.routes.filter(route => route.meta.isMenu == true);
             // console.log(router.currentRoute.value)
-        })
-        return { routes, showProfileDropdown, onLogout, currentUser, router}
-    }
+        });
+        return { routes, showProfileDropdown, onLogout, currentUser, router ,showTweetModal, showModal, closeModal};
+    },
+    components: { TweetModal }
 }
 </script>
 
