@@ -15,18 +15,25 @@
             </div>
             <!-- tweet actions -->
             <div class="flex justify-between">
-                <div class="text-gray-500 hover:bg-blue-50 p-2 hover:text-blue-700 rounded-full">
+                <!-- comment button -->
+                <div @click="showCommentModal = true" class="text-gray-500 hover:bg-blue-50 p-2 hover:text-blue-700 rounded-full">
                     <i class="far fa-comment  cursor-pointer"></i>
                     <span class="ml-1 text-gray-500 text-sm">{{tweet.num_comments}}</span>
                 </div>
+
+                <!-- tweet button -->
                 <div class="text-gray-500 hover:bg-green-50 p-2 hover:text-green-700 rounded-full">
                     <i class="fas fa-retweet  cursor-pointer"></i>
                     <span class="ml-1 text-gray-500 text-sm">{{tweet.num_retweets}}</span>
                 </div>
+
+                <!-- like button -->
                 <div class="text-gray-500 hover:bg-red-50 p-2 hover:text-red-700 rounded-full">
                     <i class="far fa-heart  cursor-pointer"></i>
                     <span class="ml-1 text-gray-500 text-sm">{{tweet.num_likes}}</span>
                 </div>
+
+                <!-- share button -->
                 <div class="text-gray-500 hover:bg-yellow-50 p-2 hover:text-yellow-500 rounded-full">
                     <i class="far fa-share-square  cursor-pointer"></i>
                     <span class="ml-1 text-gray-500 text-sm"></span>
@@ -34,17 +41,29 @@
             </div>
         </div>
     </div>
+    <comment-modal :tweet="tweet" v-if="showCommentModal" @closeModal="closeModal"></comment-modal>
 </template>
 
 <script>
 import moment from 'moment'
+import { ref } from 'vue'
+import CommentModal from './CommentModal.vue';
+
 
 export default {
+  components: { CommentModal },
     props: ['currentUser', 'tweet'],
 
     setup() {
+        const showCommentModal = ref(false);
+
+        const closeModal = () => {
+            showCommentModal.value = false
+        }
         return {
             moment,
+            showCommentModal,
+            closeModal,
         }
     }
 }
