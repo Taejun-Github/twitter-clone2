@@ -46,7 +46,7 @@
                       <!-- button -->
                       <div class="text-right mr-3 hidden sm:block">
                           <button v-if="!tweetBody.length" @click="noTweet" class="bg-red-500 text-white px-4 py-1 rounded-xl text-sm font-bold">답글을 입력하세요</button>
-                          <button v-else @click="onAddTweet" class="bg-primary hover:bg-dark text-white px-4 py-1 rounded-xl text-sm font-bold">답글</button>
+                          <button v-else @click="onCommentTweet" class="bg-primary hover:bg-dark text-white px-4 py-1 rounded-xl text-sm font-bold">답글</button>
                       </div>
                   </div>
             </div>
@@ -61,27 +61,39 @@
 <script>
 import {ref, computed} from 'vue'
 import store from '../store'
-import addTweet from '../utils/addTweet';
 import moment from 'moment'
+import { COMMENT_COLLECTION, TWEET_COLLECTION } from '../firebase'
+import firebase from 'firebase'
+
 export default {
   props: ['tweet'],
   setup(props, { emit }) {
     const tweetBody = ref('');
     const currentUser = computed(() => store.state.user)
-    const onAddTweet = async () => {
+    const onCommentTweet = async () => {
           try {
-          await addTweet(tweetBody.value, currentUser.value);
-          tweetBody.value = ''
-          emit('close-modal');
+            const doc = COMMENT_COLLECTION.doc();
+            await doc.set({
+              id: doc.id,
+              from_tweet_id: props.tweet.id,
+              comment_tweet_body: tweetBody.value,
+              uid: currentUser.value.uid,
+              create_at: Date.now(),
+            });
+          
+            await TWEET_COLLECTION.doc(props.tweet.id).update({
+            "num_comments": firebase.firestore.FieldValue.increment(1),
+            })
+            emit('close-modal');
           } catch(e) {
-              console.log('on add tweet error on homepage', e);
-          }
+            console.log("on comment tweet error", e);
+          }     
         }
     return {
       tweetBody,
-      onAddTweet,
       currentUser,
       moment,
+      onCommentTweet,
     }
   }
 }
