@@ -10,6 +10,7 @@ import More from '../pages/More.vue'
 import Login from '../pages/Login.vue'
 import Register from '../pages/Register.vue'
 import store from '../store'
+import Tweet from '../pages/Tweet.vue'
 
 const routes = [
     {path: '/', component: Home, name:'home', title: 'home', icon: 'fa-solid fa-house-user fa-fw text-2xl', meta: {isMenu: true, layout: 'DefaultLayout', requireAuth: true}},
@@ -22,6 +23,7 @@ const routes = [
     {path: '/more', name:'more',component: More, title: 'more', icon: 'fa-solid fa-angles-right fa-fw text-2xl', meta: {isMenu: true, layout: 'DefaultLayout' , requireAuth: true}}, //More
     {path: '/register', name:'register',component: Register, meta: {isMenu: false, layout: 'EmptyLayout'}}, 
     {path: '/login', name:'login',component: Login, meta: {isMenu: false, layout: 'EmptyLayout'}}, 
+    {path: '/tweet/:id', name:'tweet',component: Tweet, meta: {isMenu: false, layout: 'DefaultLayout' , requireAuth: true}},
 ]
 
 const router = createRouter({

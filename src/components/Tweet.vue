@@ -10,9 +10,9 @@
                 <span class="text-gray-500" text-xs>{{moment(tweet.created_at).fromNow()}}</span>
             </div>
             <!-- tweet body -->
-            <div>
+            <router-link :to="`/tweet/${tweet.id}`" class="hover:text-cyan-400">
                 {{tweet.tweet_body}}
-            </div>
+            </router-link>
             <!-- tweet actions -->
             <div class="flex justify-between">
                 <!-- comment button -->
@@ -32,7 +32,11 @@
                 </div>
 
                 <!-- like button -->
-                <div class="text-gray-500 hover:bg-red-50 p-2 hover:text-red-700 rounded-full">
+                <div v-if="!tweet.isLiked" class="text-gray-500 hover:bg-red-50 p-2 hover:text-red-700 rounded-full" @click="handleLikes(tweet)">
+                    <i class="far fa-heart  cursor-pointer"></i>
+                    <span class="ml-1 text-gray-500 text-sm">{{tweet.num_likes}}</span>
+                </div>
+                <div v-else class="text-red-400 p-2 hover:text-green-700 rounded-full" @click="handleLikes(tweet)">
                     <i class="far fa-heart  cursor-pointer"></i>
                     <span class="ml-1 text-gray-500 text-sm">{{tweet.num_likes}}</span>
                 </div>
@@ -53,6 +57,7 @@ import moment from 'moment'
 import { ref } from 'vue'
 import CommentModal from './CommentModal.vue';
 import handleRetweet from '../utils/handleRetweet';
+import handleLikes from '../utils/handleLikes';
 
 export default {
   components: { CommentModal },
@@ -69,6 +74,7 @@ export default {
             showCommentModal,
             closeModal,
             handleRetweet,
+            handleLikes,
         }
     }
 }

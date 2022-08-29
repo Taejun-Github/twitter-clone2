@@ -12,7 +12,7 @@ export default async (tweetBody, currentUser) => {
                 created_at: Date.now(),
                 num_comments: 0,
                 num_retweets: 0,
-                num_like: 0,
+                num_likes: 0,
             })
             resolve(true);
             } catch(e) {
