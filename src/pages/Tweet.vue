@@ -112,7 +112,6 @@ export default {
         } 
     }
 
-
     onBeforeMount(async () => {
         await TWEET_COLLECTION.doc(route.params.id).onSnapshot(async (doc) => {
            const t = await getTweetInfo(doc.data(), currentUser.value)

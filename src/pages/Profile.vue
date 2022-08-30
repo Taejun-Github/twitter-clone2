@@ -8,15 +8,15 @@
                     <i class="fas fa-arrow-left text-blue-200 p-3 rounded-full hover:bg-blue-50"></i>
                 </button>
                 <div class="px-2">
-                    <div class="font-bold">MCMH</div>
-                    <div class="text-xs">100 트윗</div>
+                    <div class="font-bold">{{ currentUser.username}}</div>
+                    <div class="text-xs">{{ currentUser.num_tweets }} 트윗</div>
                 </div>
             </div>
             <!-- background image -->
             <div class="bg-gray-200 h-40 relative flex-none">
                 <!-- profile image -->
                 <div class="border-4 w-28 h-28 border-white bg-gray-100 rounded-full absolute -bottom-14 left-2">
-                    <img src="http://picsum.photos/200"
+                    <img :src="currentUser.profile_image_url"
                         class="rounded-full opacity-80 hover:opacity-100 cursor-pointer" />
 
                 </div>
@@ -29,41 +29,34 @@
             </div>
             <!-- user info -->
             <div class="mx-3 mt-5">
-                <div class="font-extrabold text-lg">name</div>
-                <div class="text-gray">id</div>
+                <div class="font-extrabold text-lg">{{ currentUser.email }}</div>
+                <div class="text-gray">{{ currentUser.username }}</div>
                 <div>
                     <span class="text-gray">가입일:</span>
-                    <span class="text-gray">2011년 10월</span>
+                    <span class="text-gray">{{moment(currentUser.created_at).format('YYYY년 MM월 DD일')}}</span>
                 </div>
                 <div class="mt-1">
-                    <span class="font-bold mr-1">11</span>
+                    <span class="font-bold mr-1">{{ currentUser.followings.length }}</span>
                     <span class="text-gray mr-3">팔로우 중</span>
-                    <span class="font-bold mr-1">111</span>
+                    <span class="font-bold mr-1">{{ currentUser.followers.length }}</span>
                     <span class="text-gray">팔로워</span>
                 </div>
             </div>
             <!-- tabs -->
             <div class="flex border-b border-gray-100 mt-3">
-                <div class="py-3 fond-bold text-blue-200 hover:border-b hover:border-primary text-center
-                 hover:bg-green-50 cursor-pointer hover:text-blue-500 w-1/4">
+                <div @click="currentTab = 'tweet'" :class="`${currentTab == 'tweet' ? 'border-b border-primary text-primary' : 'text-gray'} py-3 font-bold text-center w-1/3 hover:bg-blue-50 cursor-pointer hover:text-primary`">
                     트윗
                 </div>
-                <div class="py-3 fond-bold text-blue-200 hover:border-b hover:border-primary text-center
-                 hover:bg-green-50 cursor-pointer hover:text-blue-500 w-1/4">
-                    트윗 및 답글
+                <div @click="currentTab = 'retweet'" :class="`${currentTab == 'retweet' ? 'border-b border-primary text-primary' : 'text-gray'} py-3 font-bold text-center w-1/3 hover:bg-blue-50 cursor-pointer hover:text-primary`">
+                    리트윗
                 </div>
-                <div class="py-3 fond-bold text-blue-200 hover:border-b hover:border-primary text-center
-                 hover:bg-green-50 cursor-pointer hover:text-blue-500 w-1/4">
-                    미디어
-                </div>
-                <div class="py-3 fond-bold text-blue-200 hover:border-b hover:border-primary text-center
-                 hover:bg-green-50 cursor-pointer hover:text-blue-500 w-1/4">
-                    마음에 들어요
+                <div @click="currentTab = 'like'" :class="`${currentTab == 'like' ? 'border-b border-primary text-primary' : 'text-gray'} py-3 font-bold text-center w-1/3 hover:bg-blue-50 cursor-pointer hover:text-primary`">
+                    좋아요
                 </div>
             </div>
             <!-- Tweets -->
             <div class="overflow-y-auto ">
-                <Tweet v-for="tweet in 10" :key="tweet"/>
+                <Tweet v-for="tweet in currentTab == 'tweet' ? tweets : currentTab == 'retweet' ? reTweets : likeTweets" :key="tweet.id" :currentUser="currentUser" :tweet="tweet"/>
             </div>
         </div>
 
@@ -75,8 +68,85 @@
 <script>
 import Trends from '../components/Trends.vue';
 import Tweet from '../components/Tweet.vue';
+import store from '../store'
+import {computed, ref, onBeforeMount } from 'vue'
+import { LIKE_COLLECTION, RETWEET_COLLECTION, TWEET_COLLECTION, USER_COLLECTION } from '../firebase';
+import moment from 'moment'
+import getTweetInfo from '../utils/getTweetInfo'
+
 export default {
-    components: { Trends, Tweet }
+    components: { Trends, Tweet },
+    setup() {
+        const currentUser = computed(() => store.state.user)
+        const tweets = ref([])
+        const reTweets = ref([])
+        const likeTweets = ref([])
+        const currentTab = ref('tweet')
+
+        onBeforeMount(()=> {
+            USER_COLLECTION.doc(currentUser.value.uid).onSnapshot(doc => {
+                store.commit("SET_USER", doc.data())
+            })
+
+            TWEET_COLLECTION.where('uid', '==', currentUser.value.uid)
+            .orderBy('created_at', 'desc').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(async (change) => {
+                    let tweet = await getTweetInfo(change.doc.data(), currentUser.value)
+                    if(change.type === 'added') {
+                        tweets.value.splice(change.newIndex, 0, tweet)
+                    } else if(change.type === 'modified') {
+                        tweets.value.splice(change.oldIndex, 1, tweet)
+                    } else if(change.type === 'removed') {
+                        tweets.value.splice(change.oldIndex, 1)
+                    }
+                })
+            })
+
+            RETWEET_COLLECTION.where('uid', '==', currentUser.value.uid)
+            .orderBy('created_at', 'desc').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(async (change) => {
+                    const doc = await TWEET_COLLECTION.doc(change.doc.data().from_tweet_id).get()
+                    let tweet = await getTweetInfo(doc.data(), currentUser.value)
+
+                    if(change.type === 'added') {
+                        reTweets.value.splice(change.newIndex, 0, tweet)
+                    } else if(change.type === 'modified') {
+                        reTweets.value.splice(change.oldIndex, 1, tweet)
+                    } else if(change.type === 'removed') {
+                        reTweets.value.splice(change.oldIndex, 1)
+                    }
+                })
+            })
+
+            LIKE_COLLECTION.where('uid', '==', currentUser.value.uid)
+            .orderBy('created_at', 'desc').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(async (change) => {
+                    const doc = await TWEET_COLLECTION.doc(change.doc.data().from_tweet_id).get()
+                    let tweet = await getTweetInfo(doc.data(), currentUser.value)
+                    
+                    if(change.type === 'added') {
+                        likeTweets.value.splice(change.newIndex, 0, tweet)
+                    } else if(change.type === 'modified') {
+                        likeTweets.value.splice(change.oldIndex, 1, tweet)
+                    } else if(change.type === 'removed') {
+                        likeTweets.value.splice(change.oldIndex, 1)
+                    }
+                })
+            })
+
+
+        })
+
+        return {
+            currentUser,
+            tweets,
+            moment,
+            getTweetInfo,
+            currentTab,
+            reTweets,
+            likeTweets,
+        }
+    }
 }
 </script>
 
