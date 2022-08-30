@@ -1,44 +1,45 @@
 <template>
-    <div class="flex-1 flex">
+    <div class="flex-1 flex" v-if="profileUser">
         <!-- profile section -->
         <div class="flex-1 flex flex-col border-r border-gray-100">
             <!-- title -->
             <div class="px-3 py-2 flex border-b border-gray-100">
-                <button class="mr-2">
+                <button class="mr-2" @click="router.go(-1)">
                     <i class="fas fa-arrow-left text-blue-200 p-3 rounded-full hover:bg-blue-50"></i>
                 </button>
                 <div class="px-2">
-                    <div class="font-bold">{{ currentUser.username}}</div>
-                    <div class="text-xs">{{ currentUser.num_tweets }} 트윗</div>
+                    <div class="font-bold">{{ profileUser.username}}</div>
+                    <div class="text-xs">{{ profileUser.num_tweets }} 트윗</div>
                 </div>
             </div>
             <!-- background image -->
             <div class="bg-gray-200 h-40 relative flex-none">
+                <img :src="profileUser.background_image_url" class="w-full h-full object-cover" />
                 <!-- profile image -->
                 <div class="border-4 w-28 h-28 border-white bg-gray-100 rounded-full absolute -bottom-14 left-2">
-                    <img :src="currentUser.profile_image_url"
-                        class="rounded-full opacity-80 hover:opacity-100 cursor-pointer" />
+                    <img :src="profileUser.profile_image_url"
+                        class="rounded-full opacity-80 hover:opacity-100 cursor-pointer object-cover w-full h-full" />
 
                 </div>
             </div>
             <!-- profile edit button -->
-            <div class="text-right mt-2 mr-2">
-                <button
+            <div class="text-right mt-2 mr-2 h-14">
+                <button v-if="currentUser.uid === profileUser.uid" @click="showProfileEditModal = true"
                     class="border border-primary text-sm py-2 text-primary px-3 hover:bg-green-50 fond-bold rounded-full">프로필
                     수정</button>
             </div>
             <!-- user info -->
             <div class="mx-3 mt-5">
-                <div class="font-extrabold text-lg">{{ currentUser.email }}</div>
-                <div class="text-gray">{{ currentUser.username }}</div>
+                <div class="font-extrabold text-lg">{{ profileUser.email }}</div>
+                <div class="text-gray">{{ profileUser.username }}</div>
                 <div>
                     <span class="text-gray">가입일:</span>
-                    <span class="text-gray">{{moment(currentUser.created_at).format('YYYY년 MM월 DD일')}}</span>
+                    <span class="text-gray">{{moment(profileUser.created_at).format('YYYY년 MM월 DD일')}}</span>
                 </div>
                 <div class="mt-1">
-                    <span class="font-bold mr-1">{{ currentUser.followings.length }}</span>
+                    <span class="font-bold mr-1">{{ profileUser.followings.length }}</span>
                     <span class="text-gray mr-3">팔로우 중</span>
-                    <span class="font-bold mr-1">{{ currentUser.followers.length }}</span>
+                    <span class="font-bold mr-1">{{ profileUser.followers.length }}</span>
                     <span class="text-gray">팔로워</span>
                 </div>
             </div>
@@ -62,6 +63,7 @@
 
         <!-- trend section -->
         <Trends></Trends>
+        <ProfileEditModal v-if="showProfileEditModal" @close-modal="showProfileEditModal = false"></ProfileEditModal>
     </div>
 </template>
 
@@ -73,22 +75,33 @@ import {computed, ref, onBeforeMount } from 'vue'
 import { LIKE_COLLECTION, RETWEET_COLLECTION, TWEET_COLLECTION, USER_COLLECTION } from '../firebase';
 import moment from 'moment'
 import getTweetInfo from '../utils/getTweetInfo'
+import { useRoute } from 'vue-router';
+import router from '../router'
+import ProfileEditModal from '../components/ProfileEditModal.vue'
 
 export default {
-    components: { Trends, Tweet },
+    components: { Trends, Tweet, ProfileEditModal },
     setup() {
         const currentUser = computed(() => store.state.user)
+        const profileUser = ref(null)
         const tweets = ref([])
         const reTweets = ref([])
         const likeTweets = ref([])
         const currentTab = ref('tweet')
+        const route = useRoute()
+        const showProfileEditModal = ref(false)
 
         onBeforeMount(()=> {
-            USER_COLLECTION.doc(currentUser.value.uid).onSnapshot(doc => {
-                store.commit("SET_USER", doc.data())
+
+            const profileUID = route.params.uid ?? currentUser.value.uid
+            
+
+            USER_COLLECTION.doc(profileUID).onSnapshot(doc => {
+                // store.commit("SET_USER", doc.data())
+                profileUser.value = doc.data()
             })
 
-            TWEET_COLLECTION.where('uid', '==', currentUser.value.uid)
+            TWEET_COLLECTION.where('uid', '==', profileUID)
             .orderBy('created_at', 'desc').onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(async (change) => {
                     let tweet = await getTweetInfo(change.doc.data(), currentUser.value)
@@ -102,7 +115,7 @@ export default {
                 })
             })
 
-            RETWEET_COLLECTION.where('uid', '==', currentUser.value.uid)
+            RETWEET_COLLECTION.where('uid', '==', profileUID)
             .orderBy('created_at', 'desc').onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(async (change) => {
                     const doc = await TWEET_COLLECTION.doc(change.doc.data().from_tweet_id).get()
@@ -118,12 +131,12 @@ export default {
                 })
             })
 
-            LIKE_COLLECTION.where('uid', '==', currentUser.value.uid)
+            LIKE_COLLECTION.where('uid', '==', profileUID)
             .orderBy('created_at', 'desc').onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(async (change) => {
                     const doc = await TWEET_COLLECTION.doc(change.doc.data().from_tweet_id).get()
                     let tweet = await getTweetInfo(doc.data(), currentUser.value)
-                    
+
                     if(change.type === 'added') {
                         likeTweets.value.splice(change.newIndex, 0, tweet)
                     } else if(change.type === 'modified') {
@@ -145,6 +158,9 @@ export default {
             currentTab,
             reTweets,
             likeTweets,
+            profileUser,
+            router,
+            showProfileEditModal,
         }
     }
 }

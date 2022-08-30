@@ -24,6 +24,8 @@ const routes = [
     {path: '/register', name:'register',component: Register, meta: {isMenu: false, layout: 'EmptyLayout'}}, 
     {path: '/login', name:'login',component: Login, meta: {isMenu: false, layout: 'EmptyLayout'}}, 
     {path: '/tweet/:id', name:'tweet',component: Tweet, meta: {isMenu: false, layout: 'DefaultLayout' , requireAuth: true}},
+    {path: '/profile/:uid', component: Profile, icon: 'fa-solid fa-user fa-fw text-2xl', meta: {isMenu: false, layout: 'DefaultLayout' , requireAuth: true}},
+
 ]
 
 const router = createRouter({
