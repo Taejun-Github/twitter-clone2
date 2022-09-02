@@ -16,8 +16,10 @@ const firebaseConfig = {
   export const auth = firebase.auth()
   export const db = firebase.firestore()
   export const storage = firebase.storage()
+  
   export const USER_COLLECTION = db.collection('users')
   export const TWEET_COLLECTION = db.collection('tweets')
   export const RETWEET_COLLECTION = db.collection('retweets')
   export const LIKE_COLLECTION = db.collection('likes')
   export const COMMENT_COLLECTION = db.collection('comments')
+  export const MESSAGE_COLLECTION = db.collection('messages')
