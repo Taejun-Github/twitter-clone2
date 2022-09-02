@@ -23,17 +23,17 @@
                 </div>
             </div>
             <!-- profile edit button -->
-            <div class="text-right mt-2 mr-2 mb-10">
+            <div class="text-right mt-2 mr-2 mb-10 relative">
                 <div v-if="currentUser.uid === profileUser.uid">
                     <button @click="showProfileEditModal = true" class="border border-primary text-sm py-2 text-primary px-3 hover:bg-green-50 fond-bold rounded-full">프로필 수정</button>
                 </div>
                 <div v-else>
-                    <div v-if="currentUser.followings.includes(profileUser.uid)" class="relative" @click="onUnFollow">
+                    <div v-if="currentUser.followings.includes(profileUser.uid)" class="" @click="onUnFollow">
                         <button class="absolute w-24 right-0 text-sm bg-primary text-white px-3 py-2 hover:opacity-0 font-bold rounded-full">팔로잉</button>
                         <button class="absolute w-24 right-0 text-sm bg-red-400 text-white px-3 py-2 opacity-0 hover:opacity-100 font-bold rounded-full">언팔로우</button>
                     </div>
                     <div v-else @click="onFollow">
-                        <button class="border border-primary text-sm py-2 text-primary px-3 hover:bg-green-50 fond-bold rounded-full">팔로우</button>
+                        <button class="absolute right-0 border border-primary text-sm py-2 text-primary px-3 hover:bg-green-50 fond-bold rounded-full">팔로우</button>
                     </div>
                 </div>
             </div>
